@@ -33,8 +33,8 @@ class Game {
         this.snakeSpawnRate = 60;
         this.frameCount = 0;
         this.petrificationAttacks = [];
-        this.petrificationMinTime = 4000;  // 4 seconds
-        this.petrificationMaxTime = 10000; // 10 seconds
+        this.petrificationMinTime = 4000;  // 4s between p attacks
+        this.petrificationMaxTime = 10000; // 
         this.lastTimeStamp = 0;
         this.playerFrozen = false;
         this.freezeTimer = 0;
@@ -53,7 +53,7 @@ class Game {
 
         // Add after other properties
         this.medusaImage = new Image();
-        this.medusaImage.src = 'medusa.jpg';  // Changed from .png to .jpg
+        this.medusaImage.src = 'medusa.jpg'; 
         this.medusaImageLoaded = false;
         this.medusaImage.onload = () => {
             this.medusaImageLoaded = true;
@@ -115,7 +115,7 @@ class Game {
     update() {
         if (this.gameOver) return;
 
-        // Check if score reached 50 and second Medusa isn't active yet
+        // add second Medusa if hit score
         if (this.score >= 30 && !this.medusa2Active) {
             this.medusa2 = {
                 x: this.canvas.width / 4,  // Start at 1/4 of screen
@@ -473,8 +473,8 @@ class Game {
                 this.petrificationAttacks.push({
                     x: attackingMedusa.x + attackingMedusa.width / 2,
                     y: attackingMedusa.y + attackingMedusa.height,
-                    width: this.player.width * 2,
-                    height: this.player.height * 4.5,
+                    width: this.player.width,
+                    height: this.player.height * 3,
                     color: '#888888',
                     isTriangle: true
                 });
