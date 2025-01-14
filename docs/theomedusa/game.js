@@ -77,6 +77,33 @@ class Game {
 
         // Start game loop
         this.gameLoop();
+
+        // At the start of the file, after initializing the canvas
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+
+        // Add these variables to track button states
+        let leftPressed = false;
+        let rightPressed = false;
+
+        // Add these event listeners after your existing keyboard event listeners
+        leftBtn.addEventListener('mousedown', () => leftPressed = true);
+        leftBtn.addEventListener('mouseup', () => leftPressed = false);
+        leftBtn.addEventListener('mouseleave', () => leftPressed = false);
+        leftBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            leftPressed = true;
+        });
+        leftBtn.addEventListener('touchend', () => leftPressed = false);
+
+        rightBtn.addEventListener('mousedown', () => rightPressed = true);
+        rightBtn.addEventListener('mouseup', () => rightPressed = false);
+        rightBtn.addEventListener('mouseleave', () => rightPressed = false);
+        rightBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            rightPressed = true;
+        });
+        rightBtn.addEventListener('touchend', () => rightPressed = false);
     }
 
     handleKeyDown(e) {
