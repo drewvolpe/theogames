@@ -82,28 +82,24 @@ class Game {
         const leftBtn = document.getElementById('leftBtn');
         const rightBtn = document.getElementById('rightBtn');
 
-        // Add these variables to track button states
-        let leftPressed = false;
-        let rightPressed = false;
-
         // Add these event listeners after your existing keyboard event listeners
-        leftBtn.addEventListener('mousedown', () => leftPressed = true);
-        leftBtn.addEventListener('mouseup', () => leftPressed = false);
-        leftBtn.addEventListener('mouseleave', () => leftPressed = false);
+        leftBtn.addEventListener('mousedown', () => this.leftPressed = true);
+        leftBtn.addEventListener('mouseup', () => this.leftPressed = false);
+        leftBtn.addEventListener('mouseleave', () => this.leftPressed = false);
         leftBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            leftPressed = true;
+            this.leftPressed = true;
         });
-        leftBtn.addEventListener('touchend', () => leftPressed = false);
+        leftBtn.addEventListener('touchend', () => this.leftPressed = false);
 
-        rightBtn.addEventListener('mousedown', () => rightPressed = true);
-        rightBtn.addEventListener('mouseup', () => rightPressed = false);
-        rightBtn.addEventListener('mouseleave', () => rightPressed = false);
+        rightBtn.addEventListener('mousedown', () => this.rightPressed = true);
+        rightBtn.addEventListener('mouseup', () => this.rightPressed = false);
+        rightBtn.addEventListener('mouseleave', () => this.rightPressed = false);
         rightBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            rightPressed = true;
+            this.rightPressed = true;
         });
-        rightBtn.addEventListener('touchend', () => rightPressed = false);
+        rightBtn.addEventListener('touchend', () => this.rightPressed = false);
     }
 
     handleKeyDown(e) {
