@@ -100,6 +100,14 @@ class Game {
             this.rightPressed = true;
         });
         rightBtn.addEventListener('touchend', () => this.rightPressed = false);
+
+        // Add this touch event listener for mobile restart
+        this.canvas.addEventListener('touchstart', (e) => {
+            if (this.gameOver) {
+                e.preventDefault();
+                this.resetGame();
+            }
+        });
     }
 
     handleKeyDown(e) {
