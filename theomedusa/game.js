@@ -30,7 +30,7 @@ class Game {
         this.score = 0;
         this.gameOver = false;
         this.snakeSpeed = 5;
-        this.snakeSpawnRate = 60;
+        this.snakeSpawnRate = 74;
         this.frameCount = 0;
         this.petrificationAttacks = [];
         this.petrificationMinTime = 4000;  // 4s between p attacks
@@ -74,6 +74,53 @@ class Game {
         this.perseusImage.onload = () => {
             this.perseusImageLoaded = true;
         };
+
+        // Initialize snake sound
+        this.snakeSound = new Audio('snake-hiss.m4a');
+        this.snakeSound.volume = 0.3; // Set volume to 30%
+        
+        // Initialize mute state
+        this.isMuted = false;
+
+        // Add keyboard shortcut for mute
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'm') {
+                this.isMuted = !this.isMuted;
+            }
+        });
+
+        // Add spear properties
+        this.spears = [];
+        this.spearSpeed = 10;
+        this.spearWidth = 10;
+        this.spearHeight = 30;
+        this.canThrowSpear = true;
+        
+        // Add stun tracking for Medusas
+        this.medusa.stunned = false;
+        this.medusa.stunTimer = 0;
+        this.stunDuration = 300; // 5 seconds at 60fps
+
+        // Add Medusa scream sound
+        this.medusaScreamSound = new Audio('scream.m4a');
+        this.medusaScreamSound.volume = 0.4;
+
+        // Add spacebar handler
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && this.canThrowSpear && !this.gameOver) {
+                this.throwSpear();
+            }
+        });
+
+        // Add spear cooldown properties
+        this.spearCooldown = false;
+        this.spearCooldownTimer = 0;
+        this.spearCooldownDuration = 480; // 8 seconds at 60fps
+
+        // Add start delay properties
+        this.gameStartDelay = 180; // 3 seconds at 60fps
+        this.gameStartTimer = this.gameStartDelay;
+        this.gameStarted = false;
 
         // Start game loop
         this.gameLoop();
@@ -137,6 +184,8 @@ class Game {
         this.medusa2Active = false;
         this.medusa3 = null;
         this.medusa3Active = false;
+        this.gameStartTimer = this.gameStartDelay;
+        this.gameStarted = false;
     }
 
     getNextPetrificationTime() {
@@ -145,6 +194,23 @@ class Game {
 
     update() {
         if (this.gameOver) return;
+
+        // Handle start delay
+        if (!this.gameStarted) {
+            this.gameStartTimer--;
+            if (this.gameStartTimer <= 0) {
+                this.gameStarted = true;
+            }
+            return; // Don't update anything else during countdown
+        }
+
+        // Add spear cooldown timer update
+        if (this.spearCooldown) {
+            this.spearCooldownTimer--;
+            if (this.spearCooldownTimer <= 0) {
+                this.spearCooldown = false;
+            }
+        }
 
         // add second Medusa if hit score
         if (this.score >= 30 && !this.medusa2Active) {
@@ -217,7 +283,17 @@ class Game {
         }
 
         // Spawn snakes from both Medusas
-        if (this.frameCount % this.snakeSpawnRate === 0) {
+        if (this.frameCount % this.snakeSpawnRate === 0 && !this.medusa.stunned && this.gameStarted) {
+            // Play snake sound if not muted
+            if (!this.isMuted) {
+                // Clone and play the sound to allow overlapping
+                const soundClone = this.snakeSound.cloneNode();
+                soundClone.play().catch(e => {
+                    // Silently handle autoplay restrictions
+                    console.log("Sound play failed:", e);
+                });
+            }
+
             // Snakes from first Medusa
             this.snakes.push({
                 x: this.medusa.x + this.medusa.width / 2,
@@ -281,6 +357,47 @@ class Game {
             // Remove attacks that are off screen
             if (attack.y > this.canvas.height) {
                 this.petrificationAttacks.splice(i, 1);
+            }
+        }
+
+        // Update Medusa stun timer
+        if (this.medusa.stunned) {
+            this.medusa.stunTimer--;
+            if (this.medusa.stunTimer <= 0) {
+                this.medusa.stunned = false;
+            }
+        }
+
+        // Update spears
+        for (let i = this.spears.length - 1; i >= 0; i--) {
+            const spear = this.spears[i];
+            spear.y -= this.spearSpeed;
+
+            // Check collision with Medusa
+            if (this.checkCollision(spear, this.medusa)) {
+                // Remove the spear
+                this.spears.splice(i, 1);
+                
+                // Stun Medusa and add points
+                if (!this.medusa.stunned) {
+                    this.medusa.stunned = true;
+                    this.medusa.stunTimer = this.stunDuration;
+                    
+                    // Add 3 points for stunning Medusa
+                    this.score += 3;
+                    
+                    // Play scream sound if not muted
+                    if (!this.isMuted) {
+                        const screamClone = this.medusaScreamSound.cloneNode();
+                        screamClone.play().catch(e => console.log("Sound play failed:", e));
+                    }
+                }
+                continue;
+            }
+
+            // Remove spears that go off screen
+            if (spear.y < 0) {
+                this.spears.splice(i, 1);
             }
         }
 
@@ -445,6 +562,12 @@ class Game {
             this.ctx.fill();
         });
 
+        // Draw spears
+        this.spears.forEach(spear => {
+            this.ctx.fillStyle = spear.color;
+            this.ctx.fillRect(spear.x - spear.width/2, spear.y, spear.width, spear.height);
+        });
+
         // Draw score
         this.ctx.fillStyle = '#fff';
         this.ctx.font = '20px Arial';
@@ -466,6 +589,35 @@ class Game {
             this.ctx.fillStyle = '#88ccff';
             this.ctx.font = '20px Arial';
             this.ctx.fillText('FROZEN!', 10, 60);
+        }
+
+        // Add visual effect for stunned Medusa
+        if (this.medusa.stunned) {
+            this.ctx.fillStyle = 'rgba(255, 255, 0, 0.3)'; // Yellow tint
+            this.ctx.fillRect(
+                this.medusa.x,
+                this.medusa.y,
+                this.medusa.width,
+                this.medusa.height
+            );
+        }
+
+        // Draw spear cooldown indicator
+        if (this.spearCooldown) {
+            this.ctx.fillStyle = '#FFD700';
+            this.ctx.font = '20px Arial';
+            this.ctx.fillText(`Spear: ${Math.ceil(this.spearCooldownTimer / 60)}s`, 10, 90);
+        }
+
+        // Draw countdown if game hasn't started
+        if (!this.gameStarted && !this.gameOver) {
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '48px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`${Math.ceil(this.gameStartTimer / 60)}`, 
+                this.canvas.width / 2, 
+                this.canvas.height / 2);
+            this.ctx.textAlign = 'left';
         }
     }
 
@@ -516,6 +668,22 @@ class Game {
         this.update();
         this.draw();
         requestAnimationFrame(this.gameLoop.bind(this));
+    }
+
+    throwSpear() {
+        if (this.spearCooldown) return; // Don't throw if on cooldown
+
+        this.spears.push({
+            x: this.player.x,
+            y: this.player.y - this.player.height/2,
+            width: this.spearWidth,
+            height: this.spearHeight,
+            color: '#FFD700' // Gold color for the spear
+        });
+
+        // Start cooldown
+        this.spearCooldown = true;
+        this.spearCooldownTimer = this.spearCooldownDuration;
     }
 }
 
