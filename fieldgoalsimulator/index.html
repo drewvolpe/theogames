@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field Goal Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        h1 {
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 2.5rem;
+        }
+
+        #gameCanvas {
+            border: 4px solid #ffd700;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .stat-value {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .instructions {
+            color: #888;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .distance-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .distance-selector label {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .distance-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #555;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .distance-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: #ffd700;
+        }
+
+        .distance-btn.active {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+
+        .distance-btn .key-hint {
+            font-size: 0.7rem;
+            color: #888;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .wind-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .wind-selector label {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .wind-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #555;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .wind-btn:hover {
+            background: rgba(100, 200, 255, 0.2);
+            border-color: #64c8ff;
+        }
+
+        .wind-btn.active {
+            background: rgba(100, 200, 255, 0.3);
+            border-color: #64c8ff;
+            color: #64c8ff;
+        }
+
+        .wind-display {
+            color: #64c8ff;
+            font-size: 0.85rem;
+            min-width: 120px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>FIELD GOAL SIMULATOR</h1>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">DISTANCE</div>
+                <div class="stat-value" id="distance">20 YDS</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SCORE</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">STREAK</div>
+                <div class="stat-value" id="streak">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">ATTEMPTS</div>
+                <div class="stat-value" id="attempts">0/0</div>
+            </div>
+        </div>
+        <div class="distance-selector">
+            <label>DISTANCE:</label>
+            <button class="distance-btn active" data-distance="20">20 YDS<span class="key-hint">[1]</span></button>
+            <button class="distance-btn" data-distance="30">30 YDS<span class="key-hint">[2]</span></button>
+            <button class="distance-btn" data-distance="40">40 YDS<span class="key-hint">[3]</span></button>
+            <button class="distance-btn" data-distance="50">50 YDS<span class="key-hint">[4]</span></button>
+            <button class="distance-btn" data-distance="60">60 YDS<span class="key-hint">[5]</span></button>
+        </div>
+        <div class="wind-selector">
+            <label>WIND:</label>
+            <button class="wind-btn active" data-wind="none">No Wind</button>
+            <button class="wind-btn" data-wind="light">Light</button>
+            <button class="wind-btn" data-wind="heavy">Heavy</button>
+            <span class="wind-display" id="windDisplay">No Wind</span>
+        </div>
+        <div class="instructions">
+            Press SPACE or Click to play | Set power | Set accuracy | Keys 1-5 to change distance
+        </div>
+    </div>
+
+    <script src="meter.js"></script>
+    <script src="renderer.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
