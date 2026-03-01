@@ -15,39 +15,35 @@ class Renderer {
         const ctx = this.ctx;
 
         // Sky gradient
-        const skyGradient = ctx.createLinearGradient(0, 0, 0, this.height * 0.4);
+        const skyGradient = ctx.createLinearGradient(0, 0, 0, this.height * 0.48);
         skyGradient.addColorStop(0, '#1e3c72');
         skyGradient.addColorStop(1, '#2a5298');
         ctx.fillStyle = skyGradient;
-        ctx.fillRect(0, 0, this.width, this.height * 0.4);
+        ctx.fillRect(0, 0, this.width, this.height * 0.48);
 
-        // Draw stadium and fans behind end zone
+        // Draw stadium and fans
         this.drawStadium();
 
-        // Draw goal post BEHIND the end zone (before field is drawn)
-        this.drawGoalPost();
-
         // Field gradient (perspective effect)
-        const fieldGradient = ctx.createLinearGradient(0, this.height * 0.4, 0, this.height);
+        const fieldGradient = ctx.createLinearGradient(0, this.height * 0.48, 0, this.height);
         fieldGradient.addColorStop(0, '#1a472a');
         fieldGradient.addColorStop(0.5, '#2d5a3f');
         fieldGradient.addColorStop(1, '#3d6b4f');
         ctx.fillStyle = fieldGradient;
-        ctx.fillRect(0, this.height * 0.4, this.width, this.height * 0.6);
+        ctx.fillRect(0, this.height * 0.48, this.width, this.height * 0.52);
 
-        // Draw yard lines with perspective
-        this.drawYardLines();
-
-        // Draw hash marks
-        this.drawHashMarks();
-
-        // Draw end zone
+        // End zone on the field surface, then goal post on top
         this.drawEndZone();
+        this.drawGoalPost();
+
+        // Yard lines and hash marks on top of field/end zone
+        this.drawYardLines();
+        this.drawHashMarks();
     }
 
     drawStadium() {
         const ctx = this.ctx;
-        const horizonY = this.height * 0.4;
+        const horizonY = this.height * 0.48;
 
         // Stadium structure (dark background)
         ctx.fillStyle = '#1a1a2e';
@@ -156,56 +152,45 @@ class Renderer {
 
     drawYardLines() {
         const ctx = this.ctx;
-        const horizonY = this.height * 0.4;
+        const horizonY = this.height * 0.48;
         const bottomY = this.height;
         const centerX = this.width / 2;
 
-        // Draw yard lines every 5 yards from goal line (0) to 50 yard line
-        // Using perspective: closer lines are larger and further down on screen
-        const yardLines = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
+        // The field is offset so formula-yards 0–10 = end zone, 10 = goal line (displayed "0"),
+        // 20 = "10 yds", ..., 60 = "50 yds". Linear t for even spacing + visible end zone.
+        const yardLines = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
 
         for (let i = 0; i < yardLines.length; i++) {
             const yards = yardLines[i];
-            // Map yards to perspective position (0 yards at horizon, 50 at bottom)
-            const t = yards / 55; // normalized position
-            const y = horizonY + (bottomY - horizonY) * (t * t); // Quadratic for perspective
+            const t = yards / 75;
+            const y = horizonY + (bottomY - horizonY) * t; // linear perspective
+            const halfWidth = 60 + (this.width / 2 - 60) * t;
+            const displayNum = yards - 10; // goal line = 0, then 10, 20 … 50
 
-            // Line gets wider as it gets closer (perspective)
-            const halfWidth = 60 + (this.width / 2 - 60) * (t * t);
-
-            // Main yard line
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.lineWidth = yards % 10 === 0 ? 3 : 2; // Thicker lines every 10 yards
+            ctx.lineWidth = displayNum % 10 === 0 ? 3 : 2;
 
             ctx.beginPath();
             ctx.moveTo(centerX - halfWidth, y);
             ctx.lineTo(centerX + halfWidth, y);
             ctx.stroke();
 
-            // Draw yard numbers every 10 yards (except goal line)
-            if (yards > 0 && yards % 10 === 0 && yards <= 50) {
-                const fontSize = Math.max(16,34 * (t * t + 0.4));
+            // Numbers on the 10-yard lines (skip the goal line label "0")
+            if (displayNum > 0 && displayNum % 10 === 0) {
+                const fontSize = Math.max(14, 34 * (t + 0.4));
                 ctx.font = `bold ${fontSize}px Arial`;
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
 
-                // Display number (on a real field, numbers go 10,20,30,40,50,40,30,20,10)
-                const displayNum = yards === 50 ? 50 : yards;
-
-                // Left side number
                 const numberOffset = halfWidth * 0.85;
                 ctx.fillText(displayNum.toString(), centerX - numberOffset, y);
-
-                // Right side number
                 ctx.fillText(displayNum.toString(), centerX + numberOffset, y);
 
-                // Draw small directional arrows pointing toward goal (triangles)
-                if (yards < 50) {
+                if (displayNum < 50) {
                     const arrowSize = fontSize * 0.4;
                     const arrowOffset = halfWidth * 0.75;
 
-                    // Left arrow (pointing left toward goal)
                     ctx.beginPath();
                     ctx.moveTo(centerX - arrowOffset - fontSize, y);
                     ctx.lineTo(centerX - arrowOffset - fontSize + arrowSize, y - arrowSize);
@@ -213,9 +198,6 @@ class Renderer {
                     ctx.closePath();
                     ctx.fill();
 
-                    // Right arrow (pointing right toward goal... but wait, goal is same direction)
-                    // Actually on a real field, arrows point toward the NEAREST goal
-                    // Since we're always looking at one end zone, arrows should point toward horizon
                     ctx.beginPath();
                     ctx.moveTo(centerX + arrowOffset + fontSize, y);
                     ctx.lineTo(centerX + arrowOffset + fontSize - arrowSize, y - arrowSize);
@@ -226,18 +208,21 @@ class Renderer {
             }
         }
 
-        // Draw the goal line more prominently
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        // Goal line drawn prominently at the front of the end zone (displayNum = 0)
+        const goalT = 10 / 75;
+        const goalY = horizonY + (bottomY - horizonY) * goalT;
+        const goalHalfWidth = 60 + (this.width / 2 - 60) * goalT;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(centerX - 80, horizonY);
-        ctx.lineTo(centerX + 80, horizonY);
+        ctx.moveTo(centerX - goalHalfWidth, goalY);
+        ctx.lineTo(centerX + goalHalfWidth, goalY);
         ctx.stroke();
     }
 
     drawHashMarks() {
         const ctx = this.ctx;
-        const horizonY = this.height * 0.4;
+        const horizonY = this.height * 0.48;
         const bottomY = this.height;
         const centerX = this.width / 2;
 
@@ -245,17 +230,16 @@ class Renderer {
 
         // Draw hash marks at every yard (between the 5-yard lines)
         // NFL hash marks are 70'9" from each sideline, roughly 1/3 from center
-        for (let yard = 1; yard <= 50; yard++) {
-            // Skip the main yard lines (every 5 yards)
+        for (let yard = 11; yard <= 60; yard++) {
+            // Skip the main yard lines (every 5 formula-yards)
             if (yard % 5 === 0) continue;
 
-            const t = yard / 55;
-            const y = horizonY + (bottomY - horizonY) * (t * t);
-            const halfWidth = 60 + (this.width / 2 - 60) * (t * t);
+            const t = yard / 75;
+            const y = horizonY + (bottomY - horizonY) * t; // linear
+            const halfWidth = 60 + (this.width / 2 - 60) * t;
 
-            // Hash mark positions (NFL style - near center of field)
-            const hashSpread = halfWidth * 0.25; // Hash marks at ~25% from center
-            const hashLength = 3 + 5 * (t * t); // Length scales with perspective
+            const hashSpread = halfWidth * 0.25;
+            const hashLength = 3 + 5 * t; // length scales with perspective
 
             ctx.lineWidth = Math.max(1, 1.5 * t);
 
@@ -290,28 +274,48 @@ class Renderer {
 
     drawEndZone() {
         const ctx = this.ctx;
-        const horizonY = this.height * 0.4;
+        const horizonY = this.height * 0.48;
+        const bottomY = this.height;
+        const centerX = this.width / 2;
 
-        // End zone area
-        ctx.fillStyle = 'rgba(139, 0, 0, 0.3)';
+        // End zone occupies formula-yards 0–10 on the field plane.
+        // Uses the same linear perspective formula as the yard lines so it lies flat.
+        // t=0 → back of end zone (at the goal post, horizon edge of field)
+        // t=10/75 → goal line (front of end zone, "0 yards")
+        const tBack = 0;
+        const tFront = 10 / 75;
+
+        const topY = horizonY + (bottomY - horizonY) * tBack;   // = horizonY
+        const botY = horizonY + (bottomY - horizonY) * tFront;
+        const topHalfWidth = 60 + (this.width / 2 - 60) * tBack;   // = 60
+        const botHalfWidth = 60 + (this.width / 2 - 60) * tFront;
+
+        // End zone fill (Steelers yellow) — lies on the field surface
+        ctx.fillStyle = 'rgba(255, 182, 18, 0.85)';
         ctx.beginPath();
-        ctx.moveTo(this.width / 2 - 80, horizonY);
-        ctx.lineTo(this.width / 2 + 80, horizonY);
-        ctx.lineTo(this.width / 2 + 100, horizonY + 40);
-        ctx.lineTo(this.width / 2 - 100, horizonY + 40);
+        ctx.moveTo(centerX - topHalfWidth, topY);
+        ctx.lineTo(centerX + topHalfWidth, topY);
+        ctx.lineTo(centerX + botHalfWidth, botY);
+        ctx.lineTo(centerX - botHalfWidth, botY);
         ctx.closePath();
         ctx.fill();
 
-        // End zone text
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.font = 'bold 20px Arial';
+        // Label
+        const midT = (tBack + tFront) / 2;
+        const midY = horizonY + (bottomY - horizonY) * midT;
+        const endZoneHeight = botY - topY;
+        const fontSize = Math.max(8, Math.floor(endZoneHeight * 0.55));
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.font = `bold ${fontSize}px Arial`;
         ctx.textAlign = 'center';
-        ctx.fillText('END ZONE', this.width / 2, horizonY + 25);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('STEELERS', centerX, midY);
+        ctx.textBaseline = 'alphabetic';
     }
 
     drawGoalPost() {
         const ctx = this.ctx;
-        const horizonY = this.height * 0.4;
+        const horizonY = this.height * 0.48;
 
         // Fixed goal post size - doesn't change with distance
         const postWidth = 120;

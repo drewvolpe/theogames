@@ -47,7 +47,7 @@ class Game {
         this.windDirection = 1; // 1 = right, -1 = left
 
         // Voice announcer
-        this.synth = window.speechSynthesis;
+        this.kickerReadyAudio = new Audio('kicker_is_ready_phil.mp3');
 
         // Bind event handlers
         this.canvas.addEventListener('click', this.handleInput.bind(this));
@@ -132,15 +132,9 @@ class Game {
     }
 
     // Voice announcer function
-    speak(text) {
-        if (this.synth) {
-            this.synth.cancel(); // Cancel any ongoing speech
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
-            this.synth.speak(utterance);
-        }
+    speak() {
+        this.kickerReadyAudio.currentTime = 0;
+        this.kickerReadyAudio.play().catch(() => {});
     }
 
     handleKeydown(e) {
@@ -212,8 +206,8 @@ class Game {
             const dirText = this.windDirection === 1 ? '→' : '←';
             windDisplay.textContent = `${Math.round(this.windSpeed)} mph ${dirText}`;
         } else if (this.windMode === 'heavy') {
-            // 15-25 mph
-            this.windSpeed = 15 + Math.random() * 10;
+            // 17-27 mph
+            this.windSpeed = 17 + Math.random() * 10;
             this.windDirection = Math.random() < 0.5 ? -1 : 1;
             const dirText = this.windDirection === 1 ? '→' : '←';
             windDisplay.textContent = `${Math.round(this.windSpeed)} mph ${dirText}`;
@@ -225,7 +219,7 @@ class Game {
             case 'READY':
                 this.state = 'POWER';
                 this.powerMeter.start(this.getSpeedForDistance('power'));
-                this.speak("If they make, they win!");
+                this.speak();
                 break;
 
             case 'POWER':
@@ -289,7 +283,7 @@ class Game {
 
         // Linear interpolation from start to goal area
         const startY = this.ball.startY;
-        const endY = this.canvas.height * 0.38; // Near goal post crossbar
+        const endY = this.canvas.height * 0.46; // Near goal post crossbar
         this.ball.y = startY + (endY - startY) * t + yOffset;
 
         // Horizontal drift based on accuracy (more drift for longer kicks)
@@ -325,12 +319,10 @@ class Game {
             this.makes++;
             this.resultMessage = 'GOOD!';
             this.resultColor = '#4ade80';
-            this.speak("It's good!");
         } else {
             this.streak = 0;
             this.resultMessage = this.getMissMessage();
             this.resultColor = '#ef4444';
-            this.speak("No good.");
         }
 
         this.state = 'RESULT';
@@ -460,7 +452,6 @@ class Game {
         this.state = 'RESULT';
         this.resultTimer = 2500;
         this.updateStats();
-        this.speak("Blocked!");
     }
 
     render() {
